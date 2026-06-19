@@ -1,0 +1,6 @@
+{
+  "name": "Resume Optimizer",
+  "description": "AI-powered professional profile optimizer and ATS-friendly career coach.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
