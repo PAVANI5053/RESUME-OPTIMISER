@@ -57,15 +57,19 @@ class ResumeRepository(private val db: ResumeDatabase) {
 
         val userPrompt = """
             INPUTS PROVIDED:
-            1. User Profile Data:
+            1. Target Job Title:
+            [${resumeTitle}]
+
+            2. User Profile Data / Current Resume:
             [${originalProfile}]
             
-            2. Target Job Description:
+            3. Target Job Description:
             [${jobDescription}]
 
             INSTRUCTIONS:
-            - Analyze the target job description to identify core keywords, required skills, and the primary responsibilities of the role.
-            - Review the user's profile data and map their existing experience to the target requirements.
+            - Analyze the user's resume/profile specifically against the Target Job Title and the Target Job Description.
+            - Identify core software, tools, languages, methodologies, or other critical technical skills required for this job title/role.
+            - Provide a comprehensive list of missing technical skills or keywords under "missingKeywords" in "keywordsAnalysis" that are prominent in the Job Description or expected of a candidate with the Target Job Title, but are not present or highlighted in the user's current resume.
             - Rewrite experience bullet points to emphasize impact, using strong action verbs and metrics where possible, ensuring they align with the job's priorities.
             - Seamlessly integrate relevant keywords from the job description into the user's skills and experience sections to pass ATS (Applicant Tracking Systems) filters.
             - Maintain a professional, confident, and action-oriented tone.

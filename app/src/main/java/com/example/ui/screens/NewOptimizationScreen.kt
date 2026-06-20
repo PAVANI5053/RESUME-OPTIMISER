@@ -1,5 +1,8 @@
 package com.example.ui.screens
 
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -11,18 +14,22 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.util.PdfTextExtractor
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,7 +43,54 @@ fun NewOptimizationScreen(
     var originalProfile by remember { mutableStateOf("") }
     var jobDescription by remember { mutableStateOf("") }
 
-    val isInputValid = originalProfile.isNotBlank() && jobDescription.isNotBlank()
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    var isReadingPdf by remember { mutableStateOf(false) }
+    var uploadedPdfName by remember { mutableStateOf<String?>(null) }
+    var uploadedPdfSize by remember { mutableStateOf<String?>(null) }
+
+    val pdfLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri ->
+        if (uri != null) {
+            isReadingPdf = true
+            coroutineScope.launch {
+                try {
+                    var name = "resume.pdf"
+                    var sizeStr = ""
+                    context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                        val nameIndex = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                        val sizeIndex = cursor.getColumnIndex(android.provider.OpenableColumns.SIZE)
+                        if (cursor.moveToFirst()) {
+                            if (nameIndex != -1) {
+                                name = cursor.getString(nameIndex)
+                            }
+                            if (sizeIndex != -1) {
+                                val size = cursor.getLong(sizeIndex)
+                                sizeStr = "${String.format("%.1f", size / 1024.0)} KB"
+                            }
+                        }
+                    }
+                    
+                    val extracted = PdfTextExtractor.extractText(context, uri)
+                    if (extracted.isNotBlank()) {
+                        originalProfile = extracted
+                        uploadedPdfName = name
+                        uploadedPdfSize = sizeStr
+                        Toast.makeText(context, "Successfully extracted ${extracted.length} characters from PDF!", Toast.LENGTH_LONG).show()
+                    } else {
+                        Toast.makeText(context, "Could not extract readable text from this PDF file. Please ensure it's not scanned/image-only.", Toast.LENGTH_LONG).show()
+                    }
+                } catch (e: Exception) {
+                    Toast.makeText(context, "Error reading PDF: ${e.message}", Toast.LENGTH_SHORT).show()
+                } finally {
+                    isReadingPdf = false
+                }
+            }
+        }
+    }
+
+    val isInputValid = title.isNotBlank() && originalProfile.isNotBlank() && jobDescription.isNotBlank()
     val scrollState = rememberScrollState()
 
     // Sample data to pre-fill instantly for UX demoing
@@ -211,18 +265,127 @@ Intern at Prime Consulting (2022 - 2023)
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.08f))
 
-                // Custom Title
+                // Custom Title / Target Job Title
                 OutlinedTextField(
                     value = title,
                     onValueChange = { title = it },
-                    label = { Text("Optimization Title (e.g., Android dev at Google)") },
-                    placeholder = { Text("Optional Custom Name") },
+                    label = { Text("Target Job Title & Company *") },
+                    placeholder = { Text("e.g., Senior Android Developer at Google") },
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("opt_title_input"),
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp)
                 )
+
+                // PDF Upload Container
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("pdf_upload_container")
+                        .clickable {
+                            if (!isReadingPdf) {
+                                pdfLauncher.launch("application/pdf")
+                            }
+                        },
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.25f)
+                    ),
+                    border = CardDefaults.outlinedCardBorder().copy(
+                        brush = androidx.compose.ui.graphics.SolidColor(
+                            if (uploadedPdfName != null) MaterialTheme.colorScheme.primary 
+                            else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f)
+                        )
+                    )
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(20.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (isReadingPdf) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                CircularProgressIndicator(modifier = Modifier.size(28.dp))
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "Extracting details... 🚀 Just a moment",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        } else if (uploadedPdfName != null) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Info,
+                                    contentDescription = "PDF Uploaded",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(36.dp)
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = uploadedPdfName ?: "",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        maxLines = 1
+                                    )
+                                    Text(
+                                        text = uploadedPdfSize ?: "",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                IconButton(
+                                    onClick = {
+                                        uploadedPdfName = null
+                                        uploadedPdfSize = null
+                                        originalProfile = ""
+                                    }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Close,
+                                        contentDescription = "Remove PDF",
+                                        tint = MaterialTheme.colorScheme.error
+                                    )
+                                }
+                            }
+                        } else {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Info,
+                                    contentDescription = "Upload PDF",
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(36.dp)
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "Upload Resume PDF",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Text(
+                                    text = "AI will automatically extract plan text details",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
 
                 // Original Resume / LinkedIn Profile
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {

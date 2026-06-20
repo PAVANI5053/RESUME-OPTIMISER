@@ -257,15 +257,19 @@ fun AtsAuditTab(resume: OptimizedResume, optimization: ResumeOptimization) {
                         modifier = Modifier.padding(vertical = 8.dp)
                     )
 
-                    // Missing Keywords warning
+                    // Missing Keywords warning / Technical Skills to Highlight or Acquire
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(imageVector = Icons.Default.Warning, contentDescription = null, tint = Color(0xFFF59E0B))
+                        Icon(
+                            imageVector = Icons.Default.Warning, 
+                            contentDescription = null, 
+                            tint = Color(0xFFEF4444)
+                        )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Unmatched Keyword Gaps (${resume.keywordsAnalysis.missingKeywords.size})",
+                            text = "Missing Technical Skills to Highlight or Acquire (${resume.keywordsAnalysis.missingKeywords.size})",
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Bold,
-                            color = Color(0xFFD97706)
+                            color = Color(0xFFEF4444)
                         )
                     }
                     
@@ -277,22 +281,103 @@ fun AtsAuditTab(resume: OptimizedResume, optimization: ResumeOptimization) {
                             modifier = Modifier.padding(start = 32.dp, top = 4.dp, bottom = 12.dp)
                         )
                     } else {
-                        FlowRow(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 12.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            resume.keywordsAnalysis.missingKeywords.forEach { tag ->
-                                Box(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .background(Color(0xFFF59E0B).copy(alpha = 0.1f))
-                                        .border(1.dp, Color(0xFFF59E0B).copy(alpha = 0.3f), RoundedCornerShape(8.dp))
-                                        .padding(horizontal = 8.dp, vertical = 4.dp)
-                                ) {
-                                    Text(text = tag, fontSize = 12.sp, color = Color(0xFFB45309), fontWeight = FontWeight.SemiBold)
+                        Column {
+                            Text(
+                                text = "These essential competencies were detected in the target job title / requirements but appear to be missing or underrepresented in your resume profile:",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(top = 8.dp, bottom = 12.dp)
+                            )
+
+                            FlowRow(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                resume.keywordsAnalysis.missingKeywords.forEach { tag ->
+                                    Box(
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(Color(0xFFEF4444).copy(alpha = 0.08f))
+                                            .border(1.dp, Color(0xFFEF4444).copy(alpha = 0.25f), RoundedCornerShape(8.dp))
+                                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                                    ) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(6.dp)
+                                                    .clip(CircleShape)
+                                                    .background(Color(0xFFEF4444))
+                                            )
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Text(
+                                                text = tag, 
+                                                fontSize = 12.sp, 
+                                                color = Color(0xFFB91C1C), 
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            // Actionable Highlight vs Acquire Card Section
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f))
+                                    .padding(12.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Row(verticalAlignment = Alignment.Top) {
+                                    Icon(
+                                        imageVector = Icons.Default.CheckCircle, 
+                                        contentDescription = null, 
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(16.dp).padding(top = 2.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Column {
+                                        Text(
+                                            text = "How to Highlight:",
+                                            style = MaterialTheme.typography.labelMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                        Text(
+                                            text = "We have already solved this for you! Review the Refitted Resume tab. We synthesized these skills directly into modified, truth-based bullet points you can copy instantly.",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+
+                                Row(verticalAlignment = Alignment.Top) {
+                                    Icon(
+                                        imageVector = Icons.Default.CheckCircle, 
+                                        contentDescription = null, 
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(16.dp).padding(top = 2.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Column {
+                                        Text(
+                                            text = "How to Acquire:",
+                                            style = MaterialTheme.typography.labelMedium,
+                                            fontWeight = FontWeight.Bold,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                        Text(
+                                            text = "Need a short professional preparation Roadmap? Tap the Career Coach tab and ask: \"How can I quickly master the missing skills needed for this job?\"",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
                                 }
                             }
                         }
